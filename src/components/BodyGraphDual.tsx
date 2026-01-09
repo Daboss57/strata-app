@@ -11,19 +11,40 @@ interface BodyGraphDualProps {
     showLabels?: boolean;
 }
 
-// Get color based on muscle points/rank
-const getMuscleColor = (points: number): string => {
+// Map body parts to categories (matching MuscleRankings)
+type BodyCategory = 'arms' | 'chest' | 'back' | 'shoulders' | 'core' | 'legs';
+
+const CATEGORY_MUSCLES: Record<BodyCategory, MuscleId[]> = {
+    arms: ['biceps', 'triceps', 'forearms'],
+    chest: ['chest'],
+    back: ['back', 'traps'],
+    shoulders: ['shoulders'],
+    core: ['core'],
+    legs: ['quads', 'hamstrings', 'glutes', 'calves'],
+};
+
+// Get category average points
+const getCategoryPoints = (category: BodyCategory, musclePoints: Record<MuscleId, number>): number => {
+    const muscles = CATEGORY_MUSCLES[category];
+    const totalPoints = muscles.reduce((sum, m) => sum + (musclePoints[m] || 0), 0);
+    return Math.round(totalPoints / muscles.length);
+};
+
+// Get color based on category points/rank
+const getCategoryColor = (category: BodyCategory, musclePoints: Record<MuscleId, number>): string => {
+    const points = getCategoryPoints(category, musclePoints);
     const rank = getRankFromPoints(points);
     return rank.color;
 };
 
 // Get opacity based on points (higher = more opaque)
-const getMuscleOpacity = (points: number): number => {
+const getCategoryOpacity = (category: BodyCategory, musclePoints: Record<MuscleId, number>): number => {
+    const points = getCategoryPoints(category, musclePoints);
     if (points === 0) return 0.3;
     if (points < 100) return 0.5;  // Iron
     if (points < 300) return 0.6;  // Bronze
     if (points < 600) return 0.7;  // Silver
-    if (points < 1000) return 0.8; // Gold
+    if (points < 1000) return 0.85; // Gold
     return 0.95; // Platinum+
 };
 
@@ -33,8 +54,9 @@ export default function BodyGraphDual({
     height = 400,
     showLabels = true,
 }: BodyGraphDualProps) {
-    const getColor = (muscle: MuscleId) => getMuscleColor(musclePoints[muscle] || 0);
-    const getOpacity = (muscle: MuscleId) => getMuscleOpacity(musclePoints[muscle] || 0);
+    // Use category-based colors for consistency with MuscleRankings
+    const getColor = (category: BodyCategory) => getCategoryColor(category, musclePoints);
+    const getOpacity = (category: BodyCategory) => getCategoryOpacity(category, musclePoints);
 
     const singleWidth = width / 2 - 10;
     const singleHeight = height - 20;
@@ -58,13 +80,13 @@ export default function BodyGraphDual({
                     <Path d="M42 8 Q50 2 58 8 Q60 14 58 18 Q50 8 42 18 Q40 14 42 8" fill="#4A4A5A" opacity="0.8" />
 
                     {/* NECK */}
-                    <Path d="M46 26 L46 32 L54 32 L54 26" fill={getColor('traps')} opacity={getOpacity('traps') * 0.7} />
+                    <Path d="M46 26 L46 32 L54 32 L54 26" fill={getColor('back')} opacity={getOpacity('back') * 0.7} />
 
                     {/* TRAPS */}
                     <Path
                         d="M38 32 Q44 30 50 31 Q56 30 62 32 L60 38 Q50 36 40 38 Z"
-                        fill={getColor('traps')}
-                        opacity={getOpacity('traps')}
+                        fill={getColor('back')}
+                        opacity={getOpacity('back')}
                     />
 
                     {/* LEFT SHOULDER */}
@@ -101,29 +123,29 @@ export default function BodyGraphDual({
                     {/* LEFT BICEP */}
                     <Path
                         d="M26 52 Q22 62 22 72 Q24 78 28 78 Q33 70 34 58 Q32 52 26 52"
-                        fill={getColor('biceps')}
-                        opacity={getOpacity('biceps')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* RIGHT BICEP */}
                     <Path
                         d="M74 52 Q78 62 78 72 Q76 78 72 78 Q67 70 66 58 Q68 52 74 52"
-                        fill={getColor('biceps')}
-                        opacity={getOpacity('biceps')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* LEFT FOREARM */}
                     <Path
                         d="M22 80 Q18 95 17 108 Q20 110 24 108 Q28 95 30 82 Q26 78 22 80"
-                        fill={getColor('forearms')}
-                        opacity={getOpacity('forearms')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* RIGHT FOREARM */}
                     <Path
                         d="M78 80 Q82 95 83 108 Q80 110 76 108 Q72 95 70 82 Q74 78 78 80"
-                        fill={getColor('forearms')}
-                        opacity={getOpacity('forearms')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* CORE / ABS */}
@@ -141,29 +163,29 @@ export default function BodyGraphDual({
                     {/* LEFT QUAD */}
                     <Path
                         d="M42 98 Q38 115 37 138 Q41 142 47 140 Q50 120 50 100 Q46 96 42 98"
-                        fill={getColor('quads')}
-                        opacity={getOpacity('quads')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* RIGHT QUAD */}
                     <Path
                         d="M58 98 Q62 115 63 138 Q59 142 53 140 Q50 120 50 100 Q54 96 58 98"
-                        fill={getColor('quads')}
-                        opacity={getOpacity('quads')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* LEFT CALF */}
                     <Path
                         d="M38 144 Q34 158 36 172 Q40 176 46 174 Q48 160 48 145 Q43 142 38 144"
-                        fill={getColor('calves')}
-                        opacity={getOpacity('calves')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* RIGHT CALF */}
                     <Path
                         d="M62 144 Q66 158 64 172 Q60 176 54 174 Q52 160 52 145 Q57 142 62 144"
-                        fill={getColor('calves')}
-                        opacity={getOpacity('calves')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* FEET */}
@@ -190,13 +212,13 @@ export default function BodyGraphDual({
                     <Path d="M40 6 Q50 0 60 6 Q62 16 60 22 Q50 12 40 22 Q38 16 40 6" fill="#4A4A5A" opacity="0.9" />
 
                     {/* NECK (back) */}
-                    <Path d="M46 26 L46 32 L54 32 L54 26" fill={getColor('traps')} opacity={getOpacity('traps') * 0.7} />
+                    <Path d="M46 26 L46 32 L54 32 L54 26" fill={getColor('back')} opacity={getOpacity('back') * 0.7} />
 
                     {/* UPPER TRAPS */}
                     <Path
                         d="M38 32 Q44 28 50 30 Q56 28 62 32 L60 40 Q50 38 40 40 Z"
-                        fill={getColor('traps')}
-                        opacity={getOpacity('traps')}
+                        fill={getColor('back')}
+                        opacity={getOpacity('back')}
                     />
 
                     {/* LEFT REAR DELT */}
@@ -237,29 +259,29 @@ export default function BodyGraphDual({
                     {/* LEFT TRICEP (back view) */}
                     <Path
                         d="M28 52 Q24 62 24 74 Q26 78 30 78 Q35 68 36 56 Q33 50 28 52"
-                        fill={getColor('triceps')}
-                        opacity={getOpacity('triceps')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* RIGHT TRICEP (back view) */}
                     <Path
                         d="M72 52 Q76 62 76 74 Q74 78 70 78 Q65 68 64 56 Q67 50 72 52"
-                        fill={getColor('triceps')}
-                        opacity={getOpacity('triceps')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* LEFT FOREARM (back) */}
                     <Path
                         d="M24 80 Q20 95 19 108 Q22 110 26 108 Q30 95 32 82 Q28 78 24 80"
-                        fill={getColor('forearms')}
-                        opacity={getOpacity('forearms')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* RIGHT FOREARM (back) */}
                     <Path
                         d="M76 80 Q80 95 81 108 Q78 110 74 108 Q70 95 68 82 Q72 78 76 80"
-                        fill={getColor('forearms')}
-                        opacity={getOpacity('forearms')}
+                        fill={getColor('arms')}
+                        opacity={getOpacity('arms')}
                     />
 
                     {/* LOWER BACK */}
@@ -274,14 +296,14 @@ export default function BodyGraphDual({
                         {/* Left glute */}
                         <Path
                             d="M42 98 Q38 105 40 115 Q45 118 50 116 L50 100 Q46 96 42 98"
-                            fill={getColor('glutes')}
-                            opacity={getOpacity('glutes')}
+                            fill={getColor('legs')}
+                            opacity={getOpacity('legs')}
                         />
                         {/* Right glute */}
                         <Path
                             d="M58 98 Q62 105 60 115 Q55 118 50 116 L50 100 Q54 96 58 98"
-                            fill={getColor('glutes')}
-                            opacity={getOpacity('glutes')}
+                            fill={getColor('legs')}
+                            opacity={getOpacity('legs')}
                         />
                         {/* Center line */}
                         <Path d="M50 98 L50 116" stroke="#0A0A0F" strokeWidth="0.8" opacity="0.5" />
@@ -290,15 +312,15 @@ export default function BodyGraphDual({
                     {/* LEFT HAMSTRING */}
                     <Path
                         d="M40 118 Q37 132 38 148 Q42 152 47 150 Q50 135 50 120 Q46 116 40 118"
-                        fill={getColor('hamstrings')}
-                        opacity={getOpacity('hamstrings')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* RIGHT HAMSTRING */}
                     <Path
                         d="M60 118 Q63 132 62 148 Q58 152 53 150 Q50 135 50 120 Q54 116 60 118"
-                        fill={getColor('hamstrings')}
-                        opacity={getOpacity('hamstrings')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
                     {/* Ham center line */}
                     <Path d="M50 120 L50 148" stroke="#0A0A0F" strokeWidth="0.6" opacity="0.4" />
@@ -306,15 +328,15 @@ export default function BodyGraphDual({
                     {/* LEFT CALF (back) */}
                     <Path
                         d="M38 150 Q34 162 36 174 Q40 178 46 176 Q48 164 48 152 Q43 148 38 150"
-                        fill={getColor('calves')}
-                        opacity={getOpacity('calves')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* RIGHT CALF (back) */}
                     <Path
                         d="M62 150 Q66 162 64 174 Q60 178 54 176 Q52 164 52 152 Q57 148 62 150"
-                        fill={getColor('calves')}
-                        opacity={getOpacity('calves')}
+                        fill={getColor('legs')}
+                        opacity={getOpacity('legs')}
                     />
 
                     {/* FEET */}

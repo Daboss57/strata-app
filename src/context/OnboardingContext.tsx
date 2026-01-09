@@ -72,6 +72,9 @@ const defaultData: OnboardingData = {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
+// DEMO MODE - Set to true for video recording, false for production
+const DEMO_MODE = false;
+
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
     const [data, setData] = useState<OnboardingData>(defaultData);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +85,13 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     }, []);
 
     const loadData = async () => {
+        // Skip AsyncStorage in demo mode - always use demo data
+        if (DEMO_MODE) {
+            setData(defaultData);
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const jsonValue = await AsyncStorage.getItem('@strata_user_data');
             if (jsonValue != null) {
